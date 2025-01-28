@@ -8,7 +8,9 @@ from app.bookings.schemas import BookingsSchema
 from app.users.models import Users
 from app.users.dependencies import get_current_user
 
-from app.exceptions.bookings_exceptions import RoomCanNotBeBooked
+from app.exceptions.bookings_exceptions import (
+    NoAvailableRoomsLeftException,
+    WrongDatesIntervalException)
 
 
 router = APIRouter(
@@ -30,7 +32,7 @@ async def check_availability(
     """Endpoint to check rooms availability"""
 
     if date_check_in >= date_check_out:
-        raise RoomCanNotBeBooked
+        raise WrongDatesIntervalException
 
     return await BookingsDAO.check_room_availability(
         user_id=user.id, room_id=room_id, date_check_in=date_check_in,
@@ -44,11 +46,13 @@ async def add_booking(
     """Endpoint to add booking"""
 
     if date_check_in >= date_check_out:
-        raise RoomCanNotBeBooked
+        raise WrongDatesIntervalException
 
     result = await BookingsDAO.add_booking(
         user_id=user.id, room_id=room_id, date_check_in=date_check_in,
         date_check_out=date_check_out)
+
     if result is None:
-        raise RoomCanNotBeBooked
+        raise NoAvailableRoomsLeftException
+
     return result
